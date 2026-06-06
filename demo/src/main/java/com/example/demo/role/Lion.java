@@ -26,4 +26,7 @@ public class Lion extends User {
         return String.format("👤 이름: %s | 🎓 전공: %s | 📌 기수: %d | 💻 파트: %s\n🆔 학번: %s",
                 getName(), getMajor(), getGeneration(), getPart(), studentId);
     }
+    public String getStudentId() {
+        return this.studentId;
+    }
 }

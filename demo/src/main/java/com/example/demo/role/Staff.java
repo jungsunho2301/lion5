@@ -26,4 +26,7 @@ public class Staff extends User {
         return String.format("👤 이름: %s | 🎓 전공: %s | 📌 기수: %d | 💻 파트: %s\n⭐ 직책: %s",
                 getName(), getMajor(), getGeneration(), getPart(), role);
     }
+    public String getRole() {
+        return this.role;
+    }
 }

@@ -1,14 +1,14 @@
 package com.example.demo.service;
 
+import com.example.demo.domain.Member;
+import com.example.demo.domain.RoleType;
 import com.example.demo.dto.*;
 import com.example.demo.repository.MemberRepository;
-import com.example.demo.role.Lion;
-import com.example.demo.role.Staff;
-import com.example.demo.role.User;
 import org.springframework.stereotype.Service;
-import java.util.Optional;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@Transactional(readOnly = true)
 public class MemberService {
     private final MemberRepository memberRepository;
 
@@ -16,51 +16,83 @@ public class MemberService {
         this.memberRepository = memberRepository;
     }
 
-    public User createLion(LionCreateRequest request) {
+    // 1. Lion 등록 (성공 시 생성 객체 반환 / 중복 시 null 반환 패턴 유지)
+    @Transactional
+    public Member createLion(LionCreateRequest request) {
         if (memberRepository.existsByName(request.getName())) {
             return null;
         }
-        Lion lion = new Lion(request.getName(), request.getMajor(), request.getGeneration(), request.getPart(), request.getStudentId());
-        memberRepository.save(lion);
-        return lion;
+        Member lion = new Member(
+                request.getName(),
+                request.getMajor(),
+                request.getGeneration(),
+                request.getPart(),
+                RoleType.LION,
+                request.getStudentId(),
+                null
+        );
+        // save()가 실행되면서 영속성 컨텍스트 및 DB IDENTITY에 의해 id가 자동으로 채워집니다.
+        return memberRepository.save(lion);
     }
 
-    public User createStaff(StaffCreateRequest request) {
+    // 2. Staff 등록
+    @Transactional
+    public Member createStaff(StaffCreateRequest request) {
         if (memberRepository.existsByName(request.getName())) {
             return null;
         }
-        // request.getPosition() 값을 Staff의 role 생성자 파라미터로 안전하게 넘겨줍니다.
-        Staff staff = new Staff(request.getName(), request.getMajor(), request.getGeneration(), request.getPart(), request.getPosition());
-        memberRepository.save(staff);
-        return staff;
+        Member staff = new Member(
+                request.getName(),
+                request.getMajor(),
+                request.getGeneration(),
+                request.getPart(),
+                RoleType.STAFF,
+                null,
+                request.getPosition()
+        );
+        return memberRepository.save(staff);
     }
 
-    public User updateLion(String name, LionUpdateRequest request) {
-        Optional<User> memberOpt = memberRepository.findByName(name);
-        if (memberOpt.isEmpty() || !(memberOpt.get() instanceof Lion)) {
+    // 3. ID 기반 단일 조회 (새로 추가된 지침 패턴)
+    public Member findById(Long id) {
+        return memberRepository.findById(id).orElse(null);
+    }
+
+    // 4. Lion 수정 (id 기반으로 변경)
+    @Transactional
+    public Member updateLion(Long id, LionUpdateRequest request) {
+        Member member = memberRepository.findById(id).orElse(null);
+        // 대상이 없거나, 해당 id의 멤버가 LION이 아닐 경우 null 반환
+        if (member == null || member.getRoleType() != RoleType.LION) {
             return null;
         }
-        Lion updatedLion = new Lion(name, request.getMajor(), request.getGeneration(), request.getPart(), request.getStudentId());
-        memberRepository.updateByName(name, updatedLion);
-        return updatedLion;
+
+        member.updateInfo(request.getMajor(), request.getGeneration(), request.getPart());
+        member.updateStudentId(request.getStudentId());
+        return memberRepository.save(member);
     }
 
-    public User updateStaff(String name, StaffUpdateRequest request) {
-        Optional<User> memberOpt = memberRepository.findByName(name);
-        if (memberOpt.isEmpty() || !(memberOpt.get() instanceof Staff)) {
+    // 5. Staff 수정 (id 기반으로 변경)
+    @Transactional
+    public Member updateStaff(Long id, StaffUpdateRequest request) {
+        Member member = memberRepository.findById(id).orElse(null);
+        // 대상이 없거나, 해당 id의 멤버가 STAFF가 아닐 경우 null 반환
+        if (member == null || member.getRoleType() != RoleType.STAFF) {
             return null;
         }
-        // 수정 시에도 가이드라인 명칭(position)을 도메인 명칭(role)에 정확히 매핑합니다.
-        Staff updatedStaff = new Staff(name, request.getMajor(), request.getGeneration(), request.getPart(), request.getPosition());
-        memberRepository.updateByName(name, updatedStaff);
-        return updatedStaff;
+
+        member.updateInfo(request.getMajor(), request.getGeneration(), request.getPart());
+        member.updatePosition(request.getPosition());
+        return memberRepository.save(member);
     }
 
-    public boolean deleteMember(String name) {
-        return memberRepository.deleteByName(name);
-    }
-
-    public Optional<User> findByName(String name) {
-        return memberRepository.findByName(name);
+    // 6. 멤버 삭제 (id 기반으로 변경 및 7주차 에러 조건 유지)
+    @Transactional
+    public boolean deleteMember(Long id) {
+        if (!memberRepository.existsById(id)) {
+            return false;
+        }
+        memberRepository.deleteById(id);
+        return true;
     }
 }

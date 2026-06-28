@@ -5,7 +5,7 @@ public class StaffCreateRequest {
     private String major;
     private int generation;
     private String part;
-    private String position; // 지침서 스펙 명시
+    private String position;
 
     public StaffCreateRequest() {}
 

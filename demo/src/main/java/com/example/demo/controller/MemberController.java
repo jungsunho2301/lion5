@@ -1,14 +1,11 @@
 package com.example.demo.controller;
 
+import com.example.demo.domain.Member;
 import com.example.demo.dto.*;
-import com.example.demo.role.Lion;
-import com.example.demo.role.Staff;
-import com.example.demo.role.User;
 import com.example.demo.service.MemberService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/members")
@@ -23,64 +20,57 @@ public class MemberController {
     // 1. Lion 등록 API (성공 201 / 중복 409)
     @PostMapping("/lions")
     public ResponseEntity<?> createLion(@RequestBody LionCreateRequest request) {
-        User created = memberService.createLion(request);
+        Member created = memberService.createLion(request);
         if (created == null) {
             return ResponseEntity.status(HttpStatus.CONFLICT).build();
         }
-        return ResponseEntity.status(HttpStatus.CREATED).body(LionResponse.from((Lion) created));
+        return ResponseEntity.status(HttpStatus.CREATED).body(MemberResponse.from(created));
     }
 
     // 2. Staff 등록 API (성공 201 / 중복 409)
     @PostMapping("/staffs")
     public ResponseEntity<?> createStaff(@RequestBody StaffCreateRequest request) {
-        User created = memberService.createStaff(request);
+        Member created = memberService.createStaff(request);
         if (created == null) {
             return ResponseEntity.status(HttpStatus.CONFLICT).build();
         }
-        return ResponseEntity.status(HttpStatus.CREATED).body(StaffResponse.from((Staff) created));
+        return ResponseEntity.status(HttpStatus.CREATED).body(MemberResponse.from(created));
     }
 
-    // 3. 이름으로 단일 멤버 조회 API (성공 200 / 실패 404)
-    @GetMapping("/{name}")
-    public ResponseEntity<?> getMember(@PathVariable("name") String name) {
-        Optional<User> memberOpt = memberService.findByName(name);
-        if (memberOpt.isEmpty()) {
+    // 3. ID 기반 단일 멤버 조회 API (성공 200 / 실패 404)
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getMember(@PathVariable("id") Long id) {
+        Member member = memberService.findById(id);
+        if (member == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
-
-        User member = memberOpt.get();
-        if (member instanceof Lion) {
-            return ResponseEntity.ok(LionResponse.from((Lion) member));
-        } else if (member instanceof Staff) {
-            return ResponseEntity.ok(StaffResponse.from((Staff) member));
-        }
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        return ResponseEntity.ok(MemberResponse.from(member));
     }
 
     // 4. Lion 정보 수정 API (성공 200 / 실패 404)
-    @PutMapping("/lions/{name}")
-    public ResponseEntity<?> updateLion(@PathVariable("name") String name, @RequestBody LionUpdateRequest request) {
-        User updated = memberService.updateLion(name, request);
+    @PutMapping("/lions/{id}")
+    public ResponseEntity<?> updateLion(@PathVariable("id") Long id, @RequestBody LionUpdateRequest request) {
+        Member updated = memberService.updateLion(id, request);
         if (updated == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
-        return ResponseEntity.ok(LionResponse.from((Lion) updated));
+        return ResponseEntity.ok(MemberResponse.from(updated));
     }
 
     // 5. Staff 정보 수정 API (성공 200 / 실패 404)
-    @PutMapping("/staffs/{name}")
-    public ResponseEntity<?> updateStaff(@PathVariable("name") String name, @RequestBody StaffUpdateRequest request) {
-        User updated = memberService.updateStaff(name, request);
+    @PutMapping("/staffs/{id}")
+    public ResponseEntity<?> updateStaff(@PathVariable("id") Long id, @RequestBody StaffUpdateRequest request) {
+        Member updated = memberService.updateStaff(id, request);
         if (updated == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
-        return ResponseEntity.ok(StaffResponse.from((Staff) updated));
+        return ResponseEntity.ok(MemberResponse.from(updated));
     }
 
     // 6. 멤버 삭제 API (성공 204 / 실패 404)
-    @DeleteMapping("/{name}")
-    public ResponseEntity<?> deleteMember(@PathVariable("name") String name) {
-        boolean isDeleted = memberService.deleteMember(name);
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteMember(@PathVariable("id") Long id) {
+        boolean isDeleted = memberService.deleteMember(id);
         if (!isDeleted) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }

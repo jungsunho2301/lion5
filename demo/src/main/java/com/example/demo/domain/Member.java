@@ -1,6 +1,9 @@
 package com.example.demo.domain;
 
+import com.example.demo.assignment.domain.Assignment; // 💡 분리된 패키지에서 Assignment를 명시적으로 가져옴
 import jakarta.persistence.*;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "member")
@@ -20,14 +23,15 @@ public class Member {
     private RoleType roleType;
 
     @Column(name = "student_id")
-    private String studentId; // Lion일 때만 값 존재, Staff는 null
+    private String studentId;
 
-    private String position;   // Staff일 때만 값 존재, Lion는 null
+    private String position;
 
-    // JPA 필수 기본 생성자
+    @OneToMany(mappedBy = "member")
+    private List<Assignment> assignments = new ArrayList<>();
+
     protected Member() {}
 
-    // 전체 필드 생성자 (객체 생성 시 사용)
     public Member(String name, String major, int generation, String part, RoleType roleType, String studentId, String position) {
         this.name = name;
         this.major = major;
@@ -38,7 +42,6 @@ public class Member {
         this.position = position;
     }
 
-    // 수정용 메서드들
     public void updateInfo(String major, int generation, String part) {
         this.major = major;
         this.generation = generation;
@@ -53,7 +56,6 @@ public class Member {
         this.position = position;
     }
 
-    // Getter 메서드
     public Long getId() { return id; }
     public String getName() { return name; }
     public String getMajor() { return major; }
@@ -62,4 +64,5 @@ public class Member {
     public RoleType getRoleType() { return roleType; }
     public String getStudentId() { return studentId; }
     public String getPosition() { return position; }
+    public List<Assignment> getAssignments() { return assignments; }
 }

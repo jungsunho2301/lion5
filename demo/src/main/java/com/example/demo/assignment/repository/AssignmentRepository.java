@@ -8,4 +8,5 @@ import java.util.List;
 @Repository
 public interface AssignmentRepository extends JpaRepository<Assignment, Long> {
     List<Assignment> findByMemberId(Long memberId);
+    List<Assignment> findByTitleContaining(String keyword);
 }
